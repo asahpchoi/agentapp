@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 azure_model = {
-    "model": "gpt-4",
+    "model": "gpt-4o",
     "api_key": os.getenv("AZURE_API_KEY"),
     "base_url": "https://ik-oai-eastus-2.openai.azure.com",
     "api_type": "azure",

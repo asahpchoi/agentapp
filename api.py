@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from autogen_api import chat_with_agents, generate_code_with_agent
 from pydantic import BaseModel
 from typing import List
-from openai import OpenAI
+ 
+from openai import AzureOpenAI
 import logging
 import json
 
@@ -47,12 +48,23 @@ async def generate_code(prompt: str):
 async def generate_roles(request: TopicRequest):
     if not request.topic:
         raise HTTPException(status_code=400, detail="Topic cannot be empty")
-    
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    
+
+    """
+        "model": "gpt-4",
+        "api_key": os.getenv("AZURE_API_KEY"),
+        "base_url": "https://ik-oai-eastus-2.openai.azure.com",
+        "api_type": "azure",
+        "api_version": "2024-02-01"
+    """    
+ 
+    client = AzureOpenAI(
+        api_key=os.getenv("AZURE_API_KEY"),  
+        api_version="2024-02-01",
+        azure_endpoint="https://ik-oai-eastus-2.openai.azure.com"
+    )
     try:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that generates JSON responses. Always ensure your response is valid JSON."},
                 {"role": "user", "content": f"""Generate 5 agent roles with descriptions for discussing a business plan for a {request.topic}. 
