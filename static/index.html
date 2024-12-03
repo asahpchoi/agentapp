@@ -95,6 +95,7 @@
     </style>
     <script>
         let generatedRoles = [];
+        let currentTopic = '';
 
         function openTab(evt, tabName) {
             var i, tabcontent, tablinks;
@@ -126,6 +127,7 @@
 
         function generateRoles() {
             const topic = document.getElementById("businessTopic").value;
+            currentTopic = topic;
             const loadingIcon = document.getElementById("loadingIcon");
             loadingIcon.style.display = "block";
             fetch('/generate_roles', {
@@ -151,8 +153,10 @@
                         `;
                         rolesContainer.appendChild(roleCard);
                     });
-                    // Show the chat section after roles are generated
+                    // Show the chat section and save button after roles are generated
                     document.getElementById("chatSection").style.display = "block";
+                    document.getElementById("saveRolesButton").style.display = "block";
+                    document.getElementById("startDiscussionButton").style.display = "block";
                 } else {
                     rolesContainer.innerHTML = `<div class="role-card">Error: ${JSON.stringify(data)}</div>`;
                 }
@@ -163,10 +167,47 @@
             });
         }
 
+        function saveRoles() {
+            fetch('/save_roles', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ topic: currentTopic, roles: generatedRoles })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Roles saved successfully!');
+            })
+            .catch(error => {
+                alert('Error saving roles: ' + error);
+            });
+        }
+
+        function startDiscussion() {
+            console.log(JSON.stringify({ topic: currentTopic, roles: generatedRoles }))
+            fetch('/start_talk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ topic: currentTopic, roles: generatedRoles })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log({data})
+            })
+            .catch(error => {
+                alert('Error starting discussion: ' + error);
+            });
+        }
+
         window.onload = function() {
             document.getElementById("defaultOpen").click();
-            // Initially hide the chat section
+            // Initially hide the chat section, save button, and start discussion button
             document.getElementById("chatSection").style.display = "none";
+            document.getElementById("saveRolesButton").style.display = "none";
+            document.getElementById("startDiscussionButton").style.display = "none";
         }
     </script>
 </head>
@@ -186,6 +227,8 @@
             <button onclick="generateRoles()">Generate Roles</button>
             <div id="loadingIcon" class="loading-icon"></div>
             <div id="rolesResponse"></div>
+            <button id="saveRolesButton" onclick="saveRoles()">Save Roles</button>
+            <button id="startDiscussionButton" onclick="startDiscussion()">Start Discussion</button>
         </div>
 
         <div id="chatSection" class="section">
