@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 from openai import AzureOpenAI
- 
+from discussion import start_discussion
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -160,63 +160,15 @@ async def generate_roles(request: TopicRequest):
         logging.error(f"OpenAI API call failed: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"OpenAI API call failed: {str(e)}")
 
-def talk(topic, agents):
-    api_base = "https://ik-oai-eastus-2.openai.azure.com"
-    api_key= "b3e819600fbe4981be34ef2aa79943e2"
-    deployment_name = 'gpt-4o'
-    api_version = '2024-02-01' # this might change in the future
-    from autogen import ConversableAgent, GroupChat, GroupChatManager
-    conf =  {
-        "model": deployment_name,
-        "api_key": api_key,
-        "base_url": api_base,
-        "api_type": "azure",
-        "api_version": api_version
-    }
-    conversable_agents = []
 
-    llm_config = {
-    'config_list': [conf]
-    }
-
-    for agent_data in agents:
- 
- 
-        agent = ConversableAgent(
-            name=agent_data.title,
-            llm_config=llm_config,
-            system_message=agent_data.description
-        )
-
-        agent_instance = {
-            'recipient': agent,
-            'message': agent_data.instruction + f" context: {topic}",
-            'max_turns': 1,
-            'summary_method': 'last_msg',
-        }
-
-        conversable_agents.append(agent_instance)
- 
-    manager = ConversableAgent(
-        'Founder',
-        llm_config=llm_config,
-        system_message=f'We start a conversation for {topic}',
-        human_input_mode='NEVER',
-    )
-
-    response = manager.initiate_chats(conversable_agents)
-    return response
-
-@app.post("/start_talk", response_model=str)
+@app.post("/start_talk")
 async def start_talk(request: SaveRolesRequest):
     try:
-        #logging.info(f"StartTalk request payload: {request.json()}")
         # Call the StartTalk API with the roles and topic
-         
-        response = talk(request.topic, request.roles)
+        response = start_discussion(request.topic, request.roles)
+        
         return response
     except Exception as e:
-        #logging.error(f"Failed to start talk: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to start talk: {str(e)}")
 
 

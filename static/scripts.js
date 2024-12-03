@@ -109,7 +109,60 @@ function saveRoles() {
     });
 }
 
+function formatChatHistory(history) {
+    if (!Array.isArray(history)) {
+        return '<div class="chat-message">No chat history available</div>';
+    }
+
+    return history.map(msg => {
+        const sender = msg.sender || 'Unknown';
+        const content = msg.content || msg;
+        return `
+            <div class="chat-message">
+                <div class="sender">${sender}</div>
+                <div class="content">${content}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function formatResponse(response) {
+    try {
+        // Try to parse the response if it's a JSON string
+        const parsedResponse = typeof response === 'string' ? JSON.parse(response) : response;
+        
+        // Format the response as HTML markup
+        return `
+            <div class="discussion-response">
+                <div class="response-content">
+                    ${parsedResponse.map(item => `
+                        <div class="response-item">
+                            <div class="response-text">${item}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        // If parsing fails, return the response as is in a formatted div
+        return `
+            <div class="discussion-response">
+                <div class="response-content">
+                    <div class="response-item">
+                        <div class="response-text">${response}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
 function startDiscussion() {
+    const loadingIcon = document.getElementById("loadingIcon");
+    if (loadingIcon) {
+        loadingIcon.style.display = "block";
+    }
+
     fetch('/start_talk', {
         method: 'POST',
         headers: {
@@ -119,9 +172,33 @@ function startDiscussion() {
     })
     .then(response => response.json())
     .then(data => {
-        alert('Discussion started successfully!');
+        if (loadingIcon) {
+            loadingIcon.style.display = "none";
+        }
+
+        const discussionResults = document.getElementById("discussionResults");
+        const discussionResponse = document.getElementById("discussionResponse");
+        const chatHistoryContainer = document.getElementById("chatHistory");
+
+        if (discussionResults) {
+            discussionResults.style.display = "block";
+        }
+
+        console.log({data})
+
+        if (discussionResponse) {
+            discussionResponse.innerHTML = `
+                <h3>Discussion Response</h3>
+                ${formatResponse(data.map(x=>x.summary))}
+            `;
+        }
+
+  
     })
     .catch(error => {
+        if (loadingIcon) {
+            loadingIcon.style.display = "none";
+        }
         alert('Error starting discussion: ' + error);
     });
 }
@@ -132,6 +209,8 @@ window.onload = function() {
     const chatSection = document.getElementById("chatSection");
     const saveRolesButton = document.getElementById("saveRolesButton");
     const startDiscussionButton = document.getElementById("startDiscussionButton");
+    const discussionResults = document.getElementById("discussionResults");
+    
     if (chatSection) {
         chatSection.style.display = "none";
     }
@@ -140,5 +219,8 @@ window.onload = function() {
     }
     if (startDiscussionButton) {
         startDiscussionButton.style.display = "none";
+    }
+    if (discussionResults) {
+        discussionResults.style.display = "none";
     }
 }
