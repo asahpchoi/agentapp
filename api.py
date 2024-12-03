@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from autogen_api import chat_with_agents, generate_code_with_agent
+ 
 from pydantic import BaseModel
 from typing import List
 from openai import AzureOpenAI
@@ -37,6 +37,7 @@ class BusinessRolesResponse(BaseModel):
 
 class TopicRequest(BaseModel):
     topic: str
+    numRoles: int
 
 class Message(BaseModel):
     content: str
@@ -92,7 +93,10 @@ async def save_roles(request: SaveRolesRequest):
 async def generate_roles(request: TopicRequest):
     if not request.topic:
         raise HTTPException(status_code=400, detail="Topic cannot be empty")
+    if not (1 <= request.numRoles <= 5):
+        raise HTTPException(status_code=400, detail="Number of roles must be between 1 and 5")
  
+    #print(request)
     client = AzureOpenAI(
         api_key=os.getenv("AZURE_API_KEY"),  
         api_version="2024-02-01",
@@ -103,7 +107,7 @@ async def generate_roles(request: TopicRequest):
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that generates JSON responses. Always ensure your response is valid JSON."},
-                {"role": "user", "content": f"""Generate 5 agent roles with descriptions and instructions for discussing a business plan for a {request.topic}. 
+                {"role": "user", "content": f"""Generate {request.numRoles} agent roles with descriptions and instructions for discussing a business plan for a {request.topic}. 
                 Return the response in this exact JSON format:
                 [
                     {{"role": "Role Name 1", "description": "Role Description 1", "instruction": "Role Instruction 1"}},
@@ -118,34 +122,19 @@ async def generate_roles(request: TopicRequest):
     except Exception as e:
         logging.error(f"OpenAI API call failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"OpenAI API call failed: {str(e)}")
-    
+    #print(response.choices[0].message.content)
     response_content = response.choices[0].message.content.strip()
     logging.info(f"OpenAI response content: {response_content}")
     
     try:
         roles_data = json.loads(response_content)
         roles = [AgentRole(title=role["role"], description=role["description"], instruction=role["instruction"]) for role in roles_data]
+        print(roles)
     except (json.JSONDecodeError, KeyError) as e:
         logging.error(f"Failed to parse roles: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to parse roles: {str(e)}")
     
     return BusinessRolesResponse(roles=roles)
-
-@app.post("/start_talk", response_model=str)
-async def start_talk(request: SaveRolesRequest):
- 
-    try:
-        #logging.info(f"StartTalk request payload: {request.json()}")
-        # Call the StartTalk API with the roles and topic
-        talk(request.topic, request.roles)
-        response = ""
-        return response
-    except Exception as e:
-        logging.error(f"Failed to start talk: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to start talk: {str(e)}")
-
-# Mount static files after API routes
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 
 def talk(topic, agents):
@@ -194,3 +183,18 @@ def talk(topic, agents):
 
     response = manager.initiate_chats(conversable_agents)
     return response
+
+@app.post("/start_talk", response_model=str)
+async def start_talk(request: SaveRolesRequest):
+    try:
+        #logging.info(f"StartTalk request payload: {request.json()}")
+        # Call the StartTalk API with the roles and topic
+         
+        response = talk(request.topic, request.roles)
+        return response
+    except Exception as e:
+        #logging.error(f"Failed to start talk: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to start talk: {str(e)}")
+
+# Mount static files after API routes
+app.mount("/", StaticFiles(directory="static", html=True), name="static")

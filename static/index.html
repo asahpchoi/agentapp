@@ -18,6 +18,7 @@
             <h2>1. Generate Business Roles</h2>
             <p>First, generate specialized roles for your business plan discussion</p>
             <input type="text" id="businessTopic" placeholder="Enter your business topic (e.g., 'coffee shop', 'tech startup')...">
+            <input type="number" id="numRoles" min="1" max="5" placeholder="Enter number of roles (1-5)">
             <button onclick="generateRoles()">Generate Roles</button>
             <div id="loadingIcon" class="loading-icon"></div>
             <div id="rolesResponse"></div>
@@ -25,20 +26,9 @@
             <button id="startDiscussionButton" onclick="startDiscussion()">Start Discussion</button>
         </div>
 
-        <div id="chatSection" class="section">
-            <h2>2. Business Discussion</h2>
-            <p>Chat with the generated roles about business strategies</p>
-            <input type="text" id="message" placeholder="Enter your business question...">
-            <button onclick="sendMessage()">Send</button>
-            <h3>Response:</h3>
-            <pre id="chatResponse"></pre>
-        </div>
+ 
     </div>
 
-    <div id="chatHistoryTab" class="container">
-        <h2>Chat History</h2>
-        <p>View your previous conversations</p>
-        <div id="chatHistory"></div>
-    </div>
+ 
 </body>
 </html>

@@ -31,43 +31,64 @@ function sendMessage() {
 
 function generateRoles() {
     const topic = document.getElementById("businessTopic").value;
+    const numRoles = document.getElementById("numRoles").value;
     currentTopic = topic;
     const loadingIcon = document.getElementById("loadingIcon");
-    loadingIcon.style.display = "block";
+    if (loadingIcon) {
+        loadingIcon.style.display = "block";
+    }
     fetch('/generate_roles', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ topic: topic })
+        body: JSON.stringify({ topic: topic, numRoles: numRoles })
     })
     .then(response => response.json())
     .then(data => {
-        loadingIcon.style.display = "none";
+        if (loadingIcon) {
+            loadingIcon.style.display = "none";
+        }
         const rolesContainer = document.getElementById("rolesResponse");
-        rolesContainer.innerHTML = '';
-        if (data.roles) {
-            generatedRoles = data.roles;
-            data.roles.forEach(role => {
-                const roleCard = document.createElement('div');
-                roleCard.className = 'role-card';
-                roleCard.innerHTML = `
-                    <div class="role-title">${role.title}</div>
-                    <div class="role-description">${role.description}</div>
-                `;
-                rolesContainer.appendChild(roleCard);
-            });
-            // Show the chat section and save button after roles are generated
-            document.getElementById("chatSection").style.display = "block";
-            document.getElementById("saveRolesButton").style.display = "block";
-            document.getElementById("startDiscussionButton").style.display = "block";
-        } else {
-            rolesContainer.innerHTML = `<div class="role-card">Error: ${JSON.stringify(data)}</div>`;
+        if (rolesContainer) {
+            rolesContainer.innerHTML = '';
+            if (data.roles) {
+                generatedRoles = data.roles;
+                data.roles.forEach(role => {
+                    const roleCard = document.createElement('div');
+                    roleCard.className = 'role-card';
+                    roleCard.innerHTML = `
+                        <div class="role-title">${role.title}</div>
+                        <div class="role-description">${role.description}</div>
+                    `;
+                    rolesContainer.appendChild(roleCard);
+                });
+                // Show the chat section and save button after roles are generated
+                const chatSection = document.getElementById("chatSection");
+                const saveRolesButton = document.getElementById("saveRolesButton");
+                const startDiscussionButton = document.getElementById("startDiscussionButton");
+                if (chatSection) {
+                    chatSection.style.display = "block";
+                }
+                if (saveRolesButton) {
+                    saveRolesButton.style.display = "block";
+                }
+                if (startDiscussionButton) {
+                    startDiscussionButton.style.display = "block";
+                }
+            } else {
+                rolesContainer.innerHTML = `<div class="role-card">Error: ${JSON.stringify(data)}</div>`;
+            }
         }
     })
     .catch(error => {
-        loadingIcon.style.display = "none";
-        document.getElementById("rolesResponse").innerHTML = `<div class="role-card">Error: ${error}</div>`;
+        if (loadingIcon) {
+            loadingIcon.style.display = "none";
+        }
+        const rolesContainer = document.getElementById("rolesResponse");
+        if (rolesContainer) {
+            rolesContainer.innerHTML = `<div class="role-card">Error: ${error}</div>`;
+        }
     });
 }
 
@@ -108,7 +129,16 @@ function startDiscussion() {
 window.onload = function() {
     document.getElementById("defaultOpen").click();
     // Initially hide the chat section, save button, and start discussion button
-    document.getElementById("chatSection").style.display = "none";
-    document.getElementById("saveRolesButton").style.display = "none";
-    document.getElementById("startDiscussionButton").style.display = "none";
+    const chatSection = document.getElementById("chatSection");
+    const saveRolesButton = document.getElementById("saveRolesButton");
+    const startDiscussionButton = document.getElementById("startDiscussionButton");
+    if (chatSection) {
+        chatSection.style.display = "none";
+    }
+    if (saveRolesButton) {
+        saveRolesButton.style.display = "none";
+    }
+    if (startDiscussionButton) {
+        startDiscussionButton.style.display = "none";
+    }
 }
